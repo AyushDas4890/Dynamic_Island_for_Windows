@@ -88,6 +88,7 @@ public partial class MainWindow
         DashStatus.Foreground = mood == Mood.Happy ? new SolidColorBrush(DoneGreen) : Brushes.White;
         DashStatus.Text = a == null ? "Waiting for Claude Code"
             : _approvals.Count > 0 ? "Needs your OK"
+            : a.Kind == "done" ? "Done"
             : (a.Activity.TrimEnd('…') + " " + a.Detail).Trim();
 
         string diff = a?.Kind == "done" ? a.Detail : a?.Diff ?? "";

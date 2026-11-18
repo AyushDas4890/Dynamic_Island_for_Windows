@@ -313,6 +313,17 @@
                 <StackPanel x:Name="PageAsk" Visibility="Collapsed">
                     <TextBlock Style="{StaticResource H1}" Text="Ask about your screen" />
                     <TextBlock Style="{StaticResource Note}" Margin="0,4,0,22" Text="Click the robot on the island's home card to ask about the app you were using, or drag it onto any window." />
+                    <Border Style="{StaticResource CardBorder}" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource H2}" Text="Circle to ask  ·  Ctrl + Shift + Space" />
+                            <TextBlock Style="{StaticResource Note}" Text="Press the shortcut anywhere. The screen freezes and your cursor becomes a pen: circle anything, then just say your question. Claude answers in the island and out loud." />
+                            <CheckBox x:Name="CircleSwitch" Style="{StaticResource Switch}" Click="Setting_Click" Margin="0,6,0,0"><TextBlock Text="Ctrl + Shift + Space opens circle to ask" /></CheckBox>
+                            <CheckBox x:Name="SpeakSwitch" Style="{StaticResource Switch}" Click="Setting_Click"><TextBlock Text="Read answers aloud" /></CheckBox>
+                            <TextBlock x:Name="HotkeyNote" Style="{StaticResource Note}" Foreground="#FF9F0A" />
+                            <TextBlock Style="{StaticResource Note}" Margin="0,4,0,0" Text="Voice questions use Windows speech recognition. If it says it's unavailable, turn on Settings → Privacy &amp; security → Speech → Online speech recognition." />
+                            <Button Style="{StaticResource PrimaryBtn}" Content="Try circle to ask" HorizontalAlignment="Left" Margin="0,12,0,0" Click="TryCircle_Click" />
+                        </StackPanel>
+                    </Border>
                     <Border Style="{StaticResource CardBorder}">
                         <StackPanel>
                             <TextBlock Style="{StaticResource H2}" Text="How answers are made" />

@@ -3,3 +3,6 @@ obj/
 dist/
 .vs/
 *.user
+engine/.venv/
+engine/models/
+__pycache__/

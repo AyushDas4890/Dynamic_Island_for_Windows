@@ -40,6 +40,8 @@ public sealed class AgentBridge
     private TcpListener? _listener;
 
     public event Action<AgentEvent>? Activity;
+    /// <summary>Claude asked to point at a spot on screen (physical pixels).</summary>
+    public event Action<int, int, string, System.Drawing.Rectangle?>? PointRequested;
     public event Action<ApprovalRequest>? ApprovalNeeded;
     public event Action<ApprovalRequest>? ApprovalClosed;
 
@@ -180,7 +182,30 @@ public sealed class AgentBridge
         "description": "Show what you are working on right now in the user's Dynamic Island, e.g. 'Running tests 3/10'.",
         "inputSchema": { "type": "object", "properties": {
             "text": { "type": "string" } },
-          "required": ["text"] } }
+          "required": ["text"] } },
+      { "name": "pc_open",
+        "description": "Open something on the user's Windows PC: an app (e.g. 'notepad', 'calc', 'spotify', 'chrome', 'explorer'), a folder or file path, or a URL (https://...). Use for 'open X' requests.",
+        "inputSchema": { "type": "object", "properties": {
+            "target": { "type": "string", "description": "App name, full path, folder, or URL" } },
+          "required": ["target"] } },
+      { "name": "pc_media",
+        "description": "Control media and volume on the user's PC.",
+        "inputSchema": { "type": "object", "properties": {
+            "action": { "type": "string", "enum": ["play_pause", "next", "previous", "volume_up", "volume_down", "mute"] },
+            "times": { "type": "integer", "description": "Repeat count for volume steps (each ~2%), default 1" } },
+          "required": ["action"] } },
+      { "name": "point_at",
+        "description": "Point at something on the user's screen: the on-screen buddy flies there and circles it with a short label. Use it whenever you tell the user where to click or look. x and y are pixel coordinates in screen.png (the screenshot you were given).",
+        "inputSchema": { "type": "object", "properties": {
+            "x": { "type": "number" }, "y": { "type": "number" },
+            "element": { "type": "string", "description": "The visible name or text of the button/field/icon you mean (e.g. 'Start', 'Export', 'Search'). The island snaps the highlight to that real UI element near x,y." },
+            "label": { "type": "string", "description": "2-4 words, e.g. 'click Export'" } },
+          "required": ["x", "y"] } },
+      { "name": "pc_search_web",
+        "description": "Open a web search for a query in the user's default browser.",
+        "inputSchema": { "type": "object", "properties": {
+            "query": { "type": "string" } },
+          "required": ["query"] } }
     ]
     """)!.AsArray();
 
@@ -256,6 +281,26 @@ public sealed class AgentBridge
                     : "no answer";
                 break;
             }
+            case "pc_open":
+                text = PcControl.Open(S("target"));
+                Post(new AgentEvent("notify", "Jarvis", "Opening", OneLine(S("target"), 80)));
+                break;
+            case "pc_media":
+                text = PcControl.Media(S("action"), (int?)args["times"] ?? 1);
+                break;
+            case "point_at":
+            {
+                double scale = AskClaude.ScreenScale;
+                int px = AskClaude.ScreenLeft + (int)(((double?)args["x"] ?? 0) * scale), py = AskClaude.ScreenTop + (int)(((double?)args["y"] ?? 0) * scale);
+                string label = OneLine(S("label"), 40), element = OneLine(S("element"), 60);
+                var snapped = await Task.Run(() => UiFinder.Find(element, px, py));
+                await _ui.InvokeAsync(() => PointRequested?.Invoke(px, py, label, snapped));
+                text = snapped is { } r ? $"Highlighted the '{element}' element on screen." : element.Length > 0 ? $"Couldn't find an element named '{element}', pointed at x,y instead." : "Pointing there now.";
+                break;
+            }
+            case "pc_search_web":
+                text = PcControl.Open("https://www.bing.com/search?q=" + Uri.EscapeDataString(S("query")));
+                break;
             default:
                 return new JsonObject { ["isError"] = true, ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = "Unknown tool " + name }) };
         }

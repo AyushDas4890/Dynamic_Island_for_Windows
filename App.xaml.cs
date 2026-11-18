@@ -70,6 +70,9 @@ public partial class App : Application
         _toggleItem = new Forms.ToolStripMenuItem("Hide island", null, (_, _) => ToggleIsland());
         menu.Items.Add(open);
         menu.Items.Add(_toggleItem);
+        var jarvisItem = new Forms.ToolStripMenuItem("Jarvis (Ctrl+Shift+J)", null, (_, _) => _island?.ToggleJarvis());
+        menu.Opening += (_, _) => jarvisItem.Checked = _island?.JarvisOn == true;
+        menu.Items.Add(jarvisItem);
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add(new Forms.ToolStripMenuItem("Quit Dynamic Island", null, (_, _) => Shutdown()));
 

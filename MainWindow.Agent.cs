@@ -42,12 +42,14 @@ public partial class MainWindow
         AskInput.PreviewKeyDown += AskInput_KeyDown;
         SetupHomeMascotDrag();
         InitDash();
+        RegisterCircleHotkey();
         StartPulse(AgentDot);
 
         try
         {
             _bridge = new AgentBridge(Dispatcher, HookToken());
             _bridge.Activity += OnAgentActivity;
+            _bridge.PointRequested += OnPointAt; // Claude's point_at → cursor buddy
             _bridge.ApprovalNeeded += r =>
             {
                 _approvals.Add(r);
@@ -159,6 +161,78 @@ public partial class MainWindow
         TakeKeyboard(true);
     }
 
+    // ---- circle to ask (global hotkey) ----
+
+    private const int HotkeyId = 0x4449; // "DI"
+    [DllImport("user32.dll")] private static extern bool RegisterHotKey(IntPtr hwnd, int id, uint mods, uint vk);
+    [DllImport("user32.dll")] private static extern bool UnregisterHotKey(IntPtr hwnd, int id);
+    private CircleOverlay? _circle;
+
+    /// <summary>Ctrl+Shift+Space anywhere: freeze the screen and circle something to ask about.</summary>
+    private void RegisterCircleHotkey()
+    {
+        var hwnd = new WindowInteropHelper(this).Handle;
+        HwndSource.FromHwnd(hwnd).AddHook((IntPtr h, int msg, IntPtr w, IntPtr l, ref bool handled) =>
+        {
+            if (msg == 0x0312 && w.ToInt32() == HotkeyId) { handled = true; StartCircle(); }
+            if (msg == 0x0312 && w.ToInt32() == JarvisHotkeyId) { handled = true; ToggleJarvis(); }
+            return IntPtr.Zero;
+        });
+        const uint MOD_CONTROL = 0x2, MOD_SHIFT = 0x4, MOD_NOREPEAT = 0x4000, VK_SPACE = 0x20, VK_J = 0x4A;
+        HotkeyRegistered = RegisterHotKey(hwnd, HotkeyId, MOD_CONTROL | MOD_SHIFT | MOD_NOREPEAT, VK_SPACE);
+        RegisterHotKey(hwnd, JarvisHotkeyId, MOD_CONTROL | MOD_SHIFT | MOD_NOREPEAT, VK_J);
+        Closed += (_, _) => { UnregisterHotKey(hwnd, HotkeyId); UnregisterHotKey(hwnd, JarvisHotkeyId); };
+        StartJarvis(announce: false);
+    }
+
+    public static bool HotkeyRegistered { get; private set; }
+
+    public void StartCircle()
+    {
+        if (!AppSettings.Current.CircleHotkey || _circle != null) return;
+        Voice.Stop();
+        _circle = new CircleOverlay();
+        _circle.Completed += (png, question) => AskDirect(png, "Circled area", question);
+        _circle.Closed += (_, _) => _circle = null;
+        _circle.Show();
+        _circle.Activate();
+    }
+
+    /// <summary>Ask Claude about an image with a ready question; answer shows in the island and is spoken.</summary>
+    public async void AskDirect(byte[] png, string target, string question)
+    {
+        _askImage = png;
+        AskTarget.Text = target + " · “" + question + "”";
+        _expand = Expand.None;
+        SetAskStage(AskStage.Thinking);
+        await RunAsk(question);
+    }
+
+    private async Task RunAsk(string question)
+    {
+        _askCancel = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+        string answer;
+        try
+        {
+            answer = await AskClaude.AskAsync(_askImage!, question, _askCancel.Token);
+            AskMascot.SetMood(Mood.Happy);
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            answer = ex.Message.Contains("401") || ex.Message.Contains("authentication", StringComparison.OrdinalIgnoreCase)
+                ? "That API key didn't work. Remove it in the home window, or sign in to Claude Code."
+                : "Couldn't reach Claude: " + ex.Message;
+            AskMascot.SetMood(Mood.Dizzy);
+        }
+        if (_ask != AskStage.Thinking) return; // closed meanwhile
+        AskAnswer.Text = answer;
+        SetAskStage(AskStage.Answer);
+        if (AppSettings.Current.SpeakAnswers)
+        {
+            try { await Voice.SpeakAsync(answer); } catch (Exception) { /* no voice installed: text only */ }
+        }
+    }
+
     /// <summary>Opens the island's question box about a given window (used by the home window).</summary>
     public void AskAbout(IntPtr window) => BeginAsk(window);
 
@@ -199,25 +273,13 @@ public partial class MainWindow
         }
 
         SetAskStage(AskStage.Thinking);
-        _askCancel = new CancellationTokenSource(TimeSpan.FromMinutes(2));
-        try
-        {
-            AskAnswer.Text = await AskClaude.AskAsync(_askImage!, text, _askCancel.Token);
-            AskMascot.SetMood(Mood.Happy);
-        }
-        catch (Exception ex) when (ex is not OutOfMemoryException)
-        {
-            AskAnswer.Text = ex.Message.Contains("401") || ex.Message.Contains("authentication", StringComparison.OrdinalIgnoreCase)
-                ? "That API key didn't work. Right-click the island → Forget Anthropic API key, then try again."
-                : "Couldn't reach Claude: " + ex.Message;
-            AskMascot.SetMood(Mood.Dizzy);
-        }
-        if (_ask == AskStage.Thinking) SetAskStage(AskStage.Answer);
+        await RunAsk(text);
     }
 
     private void EndAsk()
     {
         _askCancel?.Cancel();
+        Voice.Stop();
         _ask = AskStage.None;
         _askImage = null;
         AskAnswer.Text = "";

@@ -137,6 +137,12 @@ public partial class HomeWindow : Window
 
     // ---- ask ----
 
+    private void TryCircle_Click(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized; // get out of the way, then freeze the screen
+        Dispatcher.InvokeAsync(async () => { await Task.Delay(350); _island.StartCircle(); });
+    }
+
     private void TryAsk_Click(object sender, RoutedEventArgs e) => _island.AskAbout(new WindowInteropHelper(this).Handle);
 
     private void SaveKey_Click(object sender, RoutedEventArgs e)
@@ -165,6 +171,9 @@ public partial class HomeWindow : Window
         BluetoothSwitch.IsChecked = s.ShowBluetooth;
         ChargingSwitch.IsChecked = s.ShowCharging;
         PrivacySwitch.IsChecked = s.ShowPrivacyDots;
+        CircleSwitch.IsChecked = s.CircleHotkey;
+        SpeakSwitch.IsChecked = s.SpeakAnswers;
+        HotkeyNote.Text = MainWindow.HotkeyRegistered ? "" : "Another app already uses Ctrl + Shift + Space, so the shortcut isn't active. Use the button below.";
         StartupSwitch.IsChecked = App.IsStartupEnabled();
         UpdateTimeoutText();
         _loading = false;
@@ -183,6 +192,8 @@ public partial class HomeWindow : Window
         s.ShowBluetooth = BluetoothSwitch.IsChecked == true;
         s.ShowCharging = ChargingSwitch.IsChecked == true;
         s.ShowPrivacyDots = PrivacySwitch.IsChecked == true;
+        s.CircleHotkey = CircleSwitch.IsChecked == true;
+        s.SpeakAnswers = SpeakSwitch.IsChecked == true;
         s.Save();
     }
 

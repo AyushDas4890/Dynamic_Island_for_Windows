@@ -1,0 +1,6 @@
+faster-whisper
+openwakeword
+kokoro-onnx
+sounddevice
+soundfile
+numpy

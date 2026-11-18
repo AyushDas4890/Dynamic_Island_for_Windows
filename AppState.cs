@@ -21,6 +21,13 @@ public sealed class AppSettings
     public bool AutoAllowReadOnly { get; set; } = false;
     public int ApprovalTimeoutSeconds { get; set; } = 120;
 
+    // Circle to ask (Ctrl+Shift+Space) and voice
+    public bool CircleHotkey { get; set; } = true;
+    public bool SpeakAnswers { get; set; } = true;
+
+    // Jarvis: "Hey Jarvis" wake word, Claude Code + MCP as the brain. Ctrl+Shift+J turns it all on/off.
+    public bool JarvisEnabled { get; set; } = true;
+
     public bool FirstRunDone { get; set; }
 
     private static string PathOnDisk => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DynamicIsland", "settings.json");

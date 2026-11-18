@@ -12,9 +12,10 @@ public static class AskClaude
 {
     private const string Model = "claude-opus-5-5";
     private const string SystemPrompt =
-        "You are a friendly desktop helper living in a small Dynamic Island on the user's Windows screen. " +
-        "The user shared a screenshot of one window and asked a question about it. " +
-        "Answer in plain text (no markdown), in at most about 120 words, and refer to what is visible in the screenshot.";
+        "You are a calm, quick-witted desktop assistant in the spirit of J.A.R.V.I.S., living in a Dynamic Island on the user's Windows screen. " +
+        "The user shared a screenshot (a window, or an area they circled) and asked a question about it, often by voice. " +
+        "Your answer may be read aloud: reply in natural spoken plain text (no markdown, no lists, no code blocks), " +
+        "usually under 80 words, and refer to what is visible in the screenshot. Give practical advice when it helps.";
 
     // ---- API key: ANTHROPIC_API_KEY, else a key the user pasted, encrypted with Windows DPAPI ----
 
@@ -99,6 +100,89 @@ public static class AskClaude
         {
             try { Directory.Delete(dir, true); } catch (IOException) { }
         }
+    }
+
+    // ---- Jarvis: spoken assistant, Claude Code is the brain, the island's MCP tools are its hands ----
+
+    private const string JarvisPrompt =
+        "You are J.A.R.V.I.S., the user's voice assistant on their Windows PC, speaking through a Dynamic Island. " +
+        "The user spoke the request below. Act on it with your tools when it asks for an action: pc_open opens apps, folders, files or URLs; " +
+        "pc_media controls music and volume; pc_search_web searches; point_at shows the user where to click or look on their screen. " +
+        "Then reply as Jarvis would: one to three short spoken sentences, plain text, no markdown, lightly witty, address the user as 'sir' sparingly.\n\nRequest: ";
+
+    private static string JarvisDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DynamicIsland", "jarvis");
+
+    /// <summary>Physical-pixel origin and scale of the last screen.png, so point_at maps back to the real screen.</summary>
+    public static double ScreenScale { get; private set; } = 1;
+    public static int ScreenLeft { get; private set; }
+    public static int ScreenTop { get; private set; }
+
+    /// <summary>Screenshot of the monitor under the mouse, saved as screen.png for Jarvis (≤1568 px on the long side).</summary>
+    public static (int W, int H) CaptureScreenForJarvis()
+    {
+        GetCursorPos(out var p);
+        var b = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point(p.X, p.Y)).Bounds;
+        using var bmp = new System.Drawing.Bitmap(b.Width, b.Height);
+        using (var g = System.Drawing.Graphics.FromImage(bmp)) g.CopyFromScreen(b.Left, b.Top, 0, 0, b.Size);
+        double scale = Math.Min(1.0, 1568.0 / Math.Max(b.Width, b.Height));
+        int w = (int)(b.Width * scale), h = (int)(b.Height * scale);
+        using var small = new System.Drawing.Bitmap(bmp, w, h);
+        Directory.CreateDirectory(JarvisDir);
+        small.Save(Path.Combine(JarvisDir, "screen.png"), System.Drawing.Imaging.ImageFormat.Png);
+        (ScreenScale, ScreenLeft, ScreenTop) = (1 / scale, b.Left, b.Top);
+        return (w, h);
+    }
+
+    /// <summary>
+    /// If Claude Code ever failed to reach the island (e.g. while it restarted) it caches the server as
+    /// "needs auth" and silently skips it, leaving Jarvis without hands. Drop just our entry.
+    /// </summary>
+    private static void ForgetCachedNeedsAuth()
+    {
+        var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".claude", "mcp-needs-auth-cache.json");
+        try
+        {
+            if (!File.Exists(path) || System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(path)) is not System.Text.Json.Nodes.JsonObject cache || !cache.Remove("dynamic-island")) return;
+            File.WriteAllText(path, cache.ToJsonString());
+        }
+        catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or UnauthorizedAccessException) { }
+    }
+
+    /// <summary>Runs one spoken request through `claude -p`, continuing the previous Jarvis conversation for memory.</summary>
+    public static async Task<string> AskJarvis(string request, CancellationToken ct, (int W, int H)? screen = null)
+    {
+        if (screen is { } s)
+            request = $"[screen.png in the current folder is a {s.W}x{s.H} screenshot of the user's screen taken as they spoke. " +
+                      "If the request could be about what they see, FIRST Read screen.png and look carefully; never answer from how Windows or an app usually looks, describe only what is actually in the image. " +
+                      "Whenever your answer refers to where something is on screen (where to click, look or type), you MUST call point_at with that spot's pixel coordinates in screen.png " +
+                      "AND `element` set to the exact visible name or text of that control (e.g. 'Start', 'Export'), so the highlight snaps onto it; say 'here' or 'right there' in your reply.]\n" + request;
+        var exe = ClaudeCodePath() ?? throw new InvalidOperationException("Claude Code isn't installed, so Jarvis has no brain yet.");
+        ForgetCachedNeedsAuth();
+        Directory.CreateDirectory(JarvisDir);
+        var marker = Path.Combine(JarvisDir, ".started");
+        bool resume = File.Exists(marker) && File.GetLastWriteTime(marker) > DateTime.Now.AddHours(-6);
+
+        var psi = new System.Diagnostics.ProcessStartInfo(exe)
+        {
+            WorkingDirectory = JarvisDir,
+            RedirectStandardOutput = true, RedirectStandardError = true, RedirectStandardInput = true,
+            UseShellExecute = false, CreateNoWindow = true, StandardOutputEncoding = Encoding.UTF8,
+        };
+        if (resume) psi.ArgumentList.Add("-c");
+        foreach (var a in new[] { "-p", JarvisPrompt + request, "--allowedTools", "mcp__dynamic-island", "Read", "WebSearch", "WebFetch", "--output-format", "text" })
+            psi.ArgumentList.Add(a);
+
+        using var proc = System.Diagnostics.Process.Start(psi)!;
+        proc.StandardInput.Close();
+        var stdout = proc.StandardOutput.ReadToEndAsync(ct);
+        var stderr = proc.StandardError.ReadToEndAsync(ct);
+        try { await proc.WaitForExitAsync(ct); }
+        catch (OperationCanceledException) { try { proc.Kill(true); } catch (InvalidOperationException) { } throw; }
+
+        string answer = (await stdout).Trim(), err = (await stderr).Trim();
+        if (answer.Length > 0 && proc.ExitCode == 0) { File.WriteAllText(marker, ""); return answer; }
+        if (resume) { File.Delete(marker); return await AskJarvis(request, ct); } // request already carries the screen note // stale conversation: start fresh
+        return "I couldn't reach my brain: " + (answer.Length > 0 ? answer : err.Length > 0 ? err : "exit code " + proc.ExitCode);
     }
 
     // ---- request ----

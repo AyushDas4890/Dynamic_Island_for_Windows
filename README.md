@@ -19,6 +19,25 @@ It stays out of your way as a thin sliver, then springs open for music, notifica
 
 ## Features
 
+### 🎙️ Jarvis: talk to your PC (new in 1.2)
+Say **"Hey Jarvis"** and ask anything out loud. Jarvis sees your screen, answers in a natural voice, and a little **cursor buddy flies over and highlights exactly where to click**, HeyClicky style.
+
+| Part | What runs it |
+|---|---|
+| Wake word | [openWakeWord](https://github.com/dscripka/openWakeWord) "hey jarvis", on-device |
+| Speech to text | [faster-whisper](https://github.com/SYSTRAN/faster-whisper) `base.en`, on-device |
+| Brain | **Your Claude subscription via Claude Code**, with the island's MCP tools as hands |
+| Voice | [Kokoro](https://github.com/thewh1teagle/kokoro-onnx) (free, ElevenLabs-like), on-device |
+
+- **"Where do I click to export?"** Claude reads a screenshot taken the moment you spoke, then the buddy outlines the real button (snapped with Windows UI Automation, so it lands exactly on the control)
+- **"Open Google Chrome"**, **"next song"**, **"volume up"**: simple commands run instantly; anything else goes to Claude
+- New MCP tools: `point_at`, `pc_open` (apps, folders, URLs), `pc_media` (play/pause, tracks, volume), `pc_search_web`
+- Remembers the conversation for follow-ups
+- **Ctrl+Shift+J** turns the whole system off (mic released) and on again; also in the tray menu
+- **Ctrl+Shift+Space**: freeze the screen, circle anything with a pen and ask about it
+
+**Setup (once):** install Python 3.10+, then run `powershell -ExecutionPolicy Bypass -File engine\setup.ps1` from the source folder (downloads ~260 MB of models). Put the `engine` folder next to `DynamicIsland.exe`. Audio never leaves your PC; only your question and screenshot go to Claude.
+
 ### 🤖 Claude Code companion (new in 1.1)
 Hover the notch and the island opens into a panel that follows **Claude Code** live: which file it is editing (with a red/green diff), which command it runs, and when it's done.
 

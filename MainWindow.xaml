@@ -378,7 +378,7 @@
                                            Text="What do you want to know? Press Enter" />
                             </Grid>
                         </Border>
-                        <ScrollViewer x:Name="AskAnswerScroll" Margin="0,10,0,0" Height="122" VerticalScrollBarVisibility="Auto">
+                        <ScrollViewer x:Name="AskAnswerScroll" Margin="0,10,0,0" Height="122" VerticalScrollBarVisibility="Hidden">
                             <TextBlock x:Name="AskAnswer" FontSize="13" LineHeight="19" TextWrapping="Wrap" Foreground="#E6FFFFFF" />
                         </ScrollViewer>
                     </StackPanel>

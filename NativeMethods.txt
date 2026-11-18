@@ -1,0 +1,15 @@
+MFStartup
+MFCreateSensorActivityMonitor
+IMFSensorActivitiesReportCallback
+IMFSensorActivityMonitor
+IMFSensorActivitiesReport
+IMFSensorActivityReport
+IMFSensorProcessActivity
+IMMDeviceEnumerator
+MMDeviceEnumerator
+IMMDeviceCollection
+IMMDevice
+IAudioSessionManager2
+IAudioSessionEnumerator
+IAudioSessionControl
+DEVICE_STATE

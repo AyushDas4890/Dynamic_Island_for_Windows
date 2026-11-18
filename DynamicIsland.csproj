@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- WinForms only for the tray icon (NotifyIcon). -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>Assets\island.ico</ApplicationIcon>
+    <AssemblyTitle>Dynamic Island</AssemblyTitle>
+    <Product>Dynamic Island</Product>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Keep WPF types unambiguous (Brush, Color, Point, Clipboard...). -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+    <Resource Include="Assets\island.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Generates exact Win32/COM bindings (Media Foundation sensor monitor, Core Audio) from Microsoft's metadata. -->
+    <PackageReference Include="Microsoft.Windows.CsWin32" Version="0.3.*" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

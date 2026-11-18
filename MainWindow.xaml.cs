@@ -18,17 +18,17 @@ public partial class MainWindow : Window
 {
     // What the main island is showing. Idle = empty sliver (or empty pill while peeking);
     // Sliver = resting sliver with activity dots.
-    private enum View { Idle, Sliver, Home, Charging, Pill, Notice, MediaExpanded, TimerExpanded }
+    private enum View { Idle, Sliver, Home, Charging, Pill, Notice, MediaExpanded, TimerExpanded, Agent, Approve, Ask, Dash }
     private enum Expand { None, Main, Bubble }
-    private enum Alert { None, Charging, TimerDone, Pill, Notice }
+    private enum Alert { None, Charging, TimerDone, Pill, Notice, Agent }
 
-    private const double IslandTop = 8;
+    private const double IslandTop = 0; // attached to the top edge, like a notch
     private const double CompactHeight = 34;
     private const double BubbleSize = 34;
     private const double BubbleGap = 8;
 
     // ---- motion ----
-    private const double SliverTop = 3;
+    private const double SliverTop = 0;
     // Size springs: damping 0.88 = a hint of elasticity without wobble; settles in ~0.6 s.
     private readonly Spring _w = new(72, 0.42, 0.88), _h = new(6, 0.42, 0.88), _r = new(3, 0.42, 0.88), _top = new(SliverTop, 0.42, 0.88);
     private readonly Spring _scale = new(1, response: 0.28, dampingRatio: 0.7);
@@ -72,7 +72,10 @@ public partial class MainWindow : Window
     private FrameworkElement? _pressed;
 
     private FrameworkElement[] Views => new FrameworkElement[]
-        { SliverView, HomeView, ChargingView, PillView, NoticeView, MediaExpandedView, TimerExpandedView };
+        { SliverView, HomeView, ChargingView, PillView, NoticeView, MediaExpandedView, TimerExpandedView, AgentView, ApproveView, AskView, DashView };
+
+    // Mouse wheel over the open island flips between the music card and the home card (clock, timers, mascot).
+    private bool _preferHome;
 
     public MainWindow()
     {
@@ -102,20 +105,27 @@ public partial class MainWindow : Window
         Island.MouseLeave += (_, _) => PointerLeave();
         Island.MouseLeftButtonDown += Island_Down;
         Island.MouseLeftButtonUp += Island_Up;
+        Island.MouseWheel += (_, e) =>
+        {
+            if (_expand != Expand.Main || Asking || _approvals.Count > 0) return;
+            _preferHome = !_preferHome;
+            Refresh();
+            e.Handled = true;
+        };
         Bubble.MouseEnter += (_, _) => PointerEnter(Expand.Bubble);
         Bubble.MouseLeave += (_, _) => PointerLeave();
 
         _hoverIntent.Tick += (_, _) => { _hoverIntent.Stop(); _expand = _pendingExpand; Refresh(); };
-        _leaveGrace.Tick += (_, _) => { _leaveGrace.Stop(); _expand = Expand.None; Refresh(); };
+        _leaveGrace.Tick += (_, _) => { _leaveGrace.Stop(); _expand = Expand.None; _preferHome = false; Refresh(); };
         _alertTimer.Tick += (_, _) => { _alertTimer.Stop(); _alert = Alert.None; Refresh(); };
         _tick.Tick += (_, _) => OnTick();
 
         _notifications = new NotificationWatcher(Dispatcher);
         _notifications.Arrived += ShowNotice;
-        _clipboard.Copied += what => ShowPill("", "Copied", what, Brushes.White);
+        _clipboard.Copied += what => { if (AppSettings.Current.ShowClipboard) ShowPill("î£ˆ", "Copied", what, Brushes.White); };
         _bluetooth = new BluetoothWatcher(Dispatcher);
-        _bluetooth.Changed += (name, on) =>
-            ShowPill("", on ? "Connected" : "Disconnected", name, on ? (Brush)FindResource("ChargeGreen") : Brushes.White);
+        _bluetooth.Changed += (name, on) => { if (AppSettings.Current.ShowBluetooth)
+            ShowPill("îœ‚", on ? "Connected" : "Disconnected", name, on ? (Brush)FindResource("ChargeGreen") : Brushes.White); };
         _privacyPoll.Tick += (_, _) => PollPrivacy();
 
         _wasOnAc = Power.IsOnAc();
@@ -138,6 +148,7 @@ public partial class MainWindow : Window
         try { _clipboard.Attach(this); } catch (Exception ex) { Debug.WriteLine("Clipboard: " + ex.Message); }
         try { _bluetooth.Start(); } catch (Exception ex) { Debug.WriteLine("Bluetooth: " + ex.Message); }
         try { _camera.Start(); } catch (Exception ex) { Debug.WriteLine("Camera monitor: " + ex.Message); }
+        InitAgent();
         PollPrivacy();
         _privacyPoll.Start();
         string status;
@@ -154,7 +165,7 @@ public partial class MainWindow : Window
         bool cam = _camera.InUse, mic = false;
         try { mic = MicrophoneMonitor.InUse(); }
         catch (Exception) { /* no capture devices / audio service restarting: no indicator */ }
-        if (cam == _camOn && mic == _micOn) return;
+        if (!AppSettings.Current.ShowPrivacyDots) cam = mic = false;
         _camOn = cam; _micOn = mic;
         Refresh();
     }
@@ -171,6 +182,7 @@ public partial class MainWindow : Window
 
     private void ShowNotice(NotificationWatcher.Notice n)
     {
+        if (!AppSettings.Current.ShowNotifications) return;
         NoticeApp.Text = n.App;
         NoticeTitle.Text = n.Title;
         NoticeBody.Text = n.Body;
@@ -196,35 +208,42 @@ public partial class MainWindow : Window
     [DllImport("user32.dll")] private static extern int GetWindowLong(IntPtr hWnd, int index);
     [DllImport("user32.dll")] private static extern int SetWindowLong(IntPtr hWnd, int index, int value);
 
-    // ================= state → layout =================
+    // ================= state â†’ layout =================
 
     private View ResolveMain()
     {
+        // A pending decision from Claude Code and an open question box outrank everything else.
+        if (_approvals.Count > 0) return View.Approve;
+        if (Asking) return View.Ask;
+        if (_alert == Alert.Agent) return View.Agent;
         if (_alert == Alert.Charging) return View.Charging;
         if (_alert == Alert.TimerDone) return View.TimerExpanded;
         if (_alert == Alert.Pill) return View.Pill;
         if (_alert == Alert.Notice) return View.Notice;
 
-        bool music = _media.IsPlaying, timer = TimerActive;
+        bool music = _media.IsPlaying && AppSettings.Current.ShowMusic, timer = TimerActive;
         if (_expand == Expand.Bubble) return View.TimerExpanded;
         if (_expand == Expand.Main)
         {
-            if (timer && !music) return View.TimerExpanded;
-            return _media.HasSession ? View.MediaExpanded : View.Home;
+            return _preferHome ? View.Home : View.Dash;
         }
         // Resting: a sliver out of the way. Hover nudges it (instant feedback), dwell opens the card.
-        return music || timer || _camOn || _micOn ? View.Sliver : View.Idle;
+        return View.Sliver; // the robot notch is always there
     }
 
     private (double w, double h, double r) SizeOf(View v) => v switch
     {
         View.Idle => _peek ? (104, 12, 6) : (72, 6, 3),
-        View.Sliver => _peek ? (124, 14, 7) : (96, 10, 5),
+        View.Sliver => _peek ? (170, 34, 16) : (150, 30, 14),
+        View.Dash => (720, 214, 26),
         View.Charging => (300, 32, 16),
         View.Pill => (300, 32, 16),
         View.Notice => (372, 72, 36),
-        // Expanded cards: radius concentric with the 46px circles inset 23px → pill ends.
-        View.Home => (352, 76, 38),
+        // Expanded cards: radius concentric with the 46px circles inset 23px â†’ pill ends.
+        View.Home => (400, 76, 38),
+        View.Agent => (380, 76, 38),
+        View.Approve => (400, 156, 34),
+        View.Ask => _ask is AskStage.Thinking or AskStage.Answer ? (420, 240, 30) : (420, 104, 34),
         View.TimerExpanded => (352, 76, 38),
         View.MediaExpanded => (360, ProgressRow.Visibility == Visibility.Visible ? 140 : 116, 30),
         _ => (126, CompactHeight, 17),
@@ -263,7 +282,11 @@ public partial class MainWindow : Window
     private FrameworkElement? ViewFor(View v) => v switch
     {
         View.Sliver => SliverView,
+        View.Dash => DashView,
         View.Home => HomeView,
+        View.Agent => AgentView,
+        View.Approve => ApproveView,
+        View.Ask => AskView,
         View.Charging => ChargingView,
         View.Pill => PillView,
         View.Notice => NoticeView,
@@ -293,6 +316,9 @@ public partial class MainWindow : Window
         TimerDot.Visibility = TimerActive ? Visibility.Visible : Visibility.Hidden;
         CamDot.Visibility = _camOn ? Visibility.Visible : Visibility.Collapsed;
         MicDot.Visibility = _micOn ? Visibility.Visible : Visibility.Collapsed;
+        AgentDot.Visibility = AgentActive ? Visibility.Visible : Visibility.Collapsed;
+        UpdateApproval();
+        UpdateDash();
 
         // Timer
         if (_alert == Alert.TimerDone)
@@ -306,7 +332,7 @@ public partial class MainWindow : Window
             TimerCaption.Text = _timerPausedLeft != null ? "Paused" : "Timer";
             TimerBig.Text = Format(TimerLeft());
             TimerControls.Visibility = Visibility.Visible;
-            TimerPauseGlyph.Text = _timerPausedLeft != null ? "" : "";
+            TimerPauseGlyph.Text = _timerPausedLeft != null ? "î¨" : "î©";
         }
         UpdateRing();
 
@@ -322,7 +348,7 @@ public partial class MainWindow : Window
         if (_timerEnd != null && DateTime.Now >= _timerEnd.Value)
         {
             _timerEnd = null;
-            SystemSounds.Exclamation.Play();
+            if (AppSettings.Current.Sounds) SystemSounds.Exclamation.Play();
             ShowAlert(Alert.TimerDone, 5);
             return;
         }
@@ -379,7 +405,10 @@ public partial class MainWindow : Window
         Canvas.SetTop(Island, _top.Value);
         Island.Width = w;
         Island.Height = h;
-        Island.CornerRadius = new CornerRadius(Math.Clamp(_r.Value, 0, Math.Min(w, h) / 2));
+        double rr = Math.Clamp(_r.Value, 0, Math.Min(w, h) / 2);
+        Island.CornerRadius = new CornerRadius(0, 0, rr, rr);
+        Canvas.SetLeft(Glow, left); Canvas.SetTop(Glow, _top.Value);
+        Glow.Width = w; Glow.Height = h; Glow.CornerRadius = Island.CornerRadius;
         IslandScale.CenterX = w / 2;
         IslandScale.CenterY = 0;
         IslandScale.ScaleX = IslandScale.ScaleY = _scale.Value;
@@ -553,6 +582,7 @@ public partial class MainWindow : Window
         _scale.Target = 1;
         StartFrames();
 
+        if (_approvals.Count > 0 || Asking) return; // these close only through their own buttons
         if (_alert != Alert.None) { _alertTimer.Stop(); _alert = Alert.None; Refresh(); return; }
 
         _hoverIntent.Stop();
@@ -579,7 +609,7 @@ public partial class MainWindow : Window
         Dispatcher.InvokeAsync(() =>
         {
             bool onAc = Power.IsOnAc();
-            if (onAc && !_wasOnAc && Power.BatteryPercent() is int pct)
+            if (onAc && !_wasOnAc && AppSettings.Current.ShowCharging && Power.BatteryPercent() is int pct)
             {
                 ChargePercent.Text = pct + "%";
                 ChargeFill.Width = Math.Max(2, 24 * pct / 100.0);

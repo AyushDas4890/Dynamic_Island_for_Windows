@@ -19,6 +19,21 @@ It stays out of your way as a thin sliver, then springs open for music, notifica
 
 ## Features
 
+### 🤖 Claude Code companion (new in 1.1)
+Hover the notch and the island opens into a panel that follows **Claude Code** live: which file it is editing (with a red/green diff), which command it runs, and when it's done.
+
+<img src="docs/screenshots/dashboard.png" width="720" alt="Island panel with Claude Code card, music, focus timer, clock and settings tiles" />
+
+- **Allow / Deny** Claude's permission requests right in the island, or from the home window
+- A **robot companion** whose mood follows the work: focused, curious when it needs you, happy when done, dizzy if you poke it, in love on double-click
+- The notch **glows** orange while Claude works, blue when it needs you, green when it's done
+- **Ask about your screen**: drag the robot onto any window and ask a question. Uses your existing **Claude subscription through Claude Code** (no API key needed)
+- **Island MCP server**: Claude Code can notify you, show progress and ask you quick yes/no questions in the island
+- **Home window** with an approvals queue, activity history, Claude Code sign-in and all settings
+- Starts with Windows by default (turn off in settings)
+
+**Setup:** install [Claude Code](https://code.claude.com/docs/en/setup), open Dynamic Island → **Claude Code** → **Open Claude Code to sign in** (type `/login`), then turn on **Follow Claude Code** and **Island MCP server**.
+
 ### 🎵 Now Playing
 Works with **any** app that shows up in Windows' media controls: Spotify, YouTube in any browser, Windows Media Player and more.
 

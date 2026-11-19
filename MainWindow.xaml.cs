@@ -137,9 +137,7 @@ public partial class MainWindow : Window
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
-        Left = (SystemParameters.PrimaryScreenWidth - Width) / 2;
-        Top = 0;
-        ApplyGeometry();
+        PlaceWindow();
         Refresh();
         try { await _media.StartAsync(); }
         catch (Exception ex) { Debug.WriteLine("Media watcher failed: " + ex.Message); }
@@ -399,35 +397,43 @@ public partial class MainWindow : Window
         double w = Math.Max(_w.Value, 1), h = Math.Max(_h.Value, 1);
         double bs = Math.Max(_bubble.Value, 0), gap = Math.Max(_gap.Value, 0);
         double total = w + (bs > 0.5 ? gap + bs : 0);
-        double left = (Root.ActualWidth > 0 ? Root.ActualWidth : Width) / 2 - total / 2;
+        double left = IslandLeft(total);
+        double y = IslandY(h, _top.Value);
 
         Canvas.SetLeft(Island, left);
-        Canvas.SetTop(Island, _top.Value);
+        Canvas.SetTop(Island, y);
         Island.Width = w;
         Island.Height = h;
         double rr = Math.Clamp(_r.Value, 0, Math.Min(w, h) / 2);
-        Island.CornerRadius = new CornerRadius(0, 0, rr, rr);
-        Canvas.SetLeft(Glow, left); Canvas.SetTop(Glow, _top.Value);
+        // Attached to the screen edge it docks on: round only the free side.
+        Island.CornerRadius = AtBottom ? new CornerRadius(rr, rr, 0, 0) : new CornerRadius(0, 0, rr, rr);
+        Canvas.SetLeft(Glow, left); Canvas.SetTop(Glow, y);
         Glow.Width = w; Glow.Height = h; Glow.CornerRadius = Island.CornerRadius;
         IslandScale.CenterX = w / 2;
-        IslandScale.CenterY = 0;
+        IslandScale.CenterY = AtBottom ? h : 0;
         IslandScale.ScaleX = IslandScale.ScaleY = _scale.Value;
+
+        // The thin hover strip sits on the docked edge, centred on the island.
+        Canvas.SetLeft(HitZone, left + w / 2 - HitZone.Width / 2);
+        Canvas.SetTop(HitZone, IslandY(HitZone.Height, 0));
 
         Bubble.Visibility = bs > 0.5 ? Visibility.Visible : Visibility.Collapsed;
         Canvas.SetLeft(Bubble, left + w + gap);
-        Canvas.SetTop(Bubble, IslandTop + (CompactHeight - bs) / 2);
+        Canvas.SetTop(Bubble, IslandY(bs, IslandTop + (CompactHeight - bs) / 2));
         Bubble.Width = Bubble.Height = bs;
         Bubble.CornerRadius = new CornerRadius(bs / 2);
     }
 
     // ================= motion: content =================
 
+    private static bool s_growFromBottom = AppSettings.Current.Dock >= IslandDock.BottomLeft;
+
     private static void PrepareView(FrameworkElement v)
     {
         v.Opacity = 0;
         v.Visibility = Visibility.Hidden;
         v.IsHitTestVisible = false;
-        v.RenderTransformOrigin = new Point(0.5, 0); // grow down and out from the island's top
+        v.RenderTransformOrigin = new Point(0.5, s_growFromBottom ? 1 : 0); // grow out from the docked edge
         v.RenderTransform = new ScaleTransform(0.92, 0.92);
     }
 
@@ -575,12 +581,15 @@ public partial class MainWindow : Window
     {
         _scale.Target = 0.95; // squish under the pointer, immediately
         StartFrames();
+        ArmIslandDrag(); // becomes a drag if the pointer moves; otherwise it's a click
     }
 
     private void Island_Up(object sender, MouseButtonEventArgs e)
     {
         _scale.Target = 1;
         StartFrames();
+        if (_islandDragging) { FinishIslandDrag(); return; } // that was a drag, not a click
+        CancelIslandDrag();
 
         if (_approvals.Count > 0 || Asking) return; // these close only through their own buttons
         if (_alert != Alert.None) { _alertTimer.Stop(); _alert = Alert.None; Refresh(); return; }

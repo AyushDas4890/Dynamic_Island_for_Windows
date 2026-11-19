@@ -3,15 +3,15 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:DynamicIsland"
         Title="Dynamic Island" Width="940" Height="640" MinWidth="780" MinHeight="520"
-        WindowStartupLocation="CenterScreen" Background="#0D0E12" Foreground="White"
+        WindowStartupLocation="CenterScreen" Background="#D9D9D9" Foreground="#111111"
         FontFamily="Segoe UI Variable Text, Segoe UI" TextOptions.TextFormattingMode="Ideal" UseLayoutRounding="True">
 
     <Window.Resources>
-        <SolidColorBrush x:Key="Card" Color="#16171C" />
-        <SolidColorBrush x:Key="CardLine" Color="#24262D" />
-        <SolidColorBrush x:Key="Muted" Color="#8C9099" />
-        <SolidColorBrush x:Key="Green" Color="#30D158" />
-        <FontFamily x:Key="Display">Segoe UI Variable Display, Segoe UI</FontFamily>
+        <SolidColorBrush x:Key="Card" Color="#E3E3E4" />
+        <SolidColorBrush x:Key="CardLine" Color="#111111" />
+        <SolidColorBrush x:Key="Muted" Color="#55565C" />
+        <SolidColorBrush x:Key="Green" Color="#178A3A" />
+        <FontFamily x:Key="Display">pack://application:,,,/Assets/Fonts/#Rubik Dirt</FontFamily>
         <FontFamily x:Key="Mono">Cascadia Mono, Consolas</FontFamily>
         <LinearGradientBrush x:Key="Brand" StartPoint="0,0.5" EndPoint="1,0.5">
             <GradientStop Color="#1A1C24" Offset="0" />
@@ -21,18 +21,18 @@
         <Style x:Key="CardBorder" TargetType="Border">
             <Setter Property="Background" Value="{StaticResource Card}" />
             <Setter Property="BorderBrush" Value="{StaticResource CardLine}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="BorderThickness" Value="1.6" />
+            <Setter Property="CornerRadius" Value="14" />
             <Setter Property="Padding" Value="20" />
         </Style>
         <Style x:Key="H1" TargetType="TextBlock">
             <Setter Property="FontFamily" Value="{StaticResource Display}" />
-            <Setter Property="FontSize" Value="28" />
-            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="42" />
+            <Setter Property="FontWeight" Value="Normal" />
         </Style>
         <Style x:Key="H2" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="15" />
-            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontFamily" Value="{StaticResource Display}" />
+            <Setter Property="FontSize" Value="20" />
             <Setter Property="Margin" Value="0,0,0,10" />
         </Style>
         <Style x:Key="Note" TargetType="TextBlock">
@@ -43,8 +43,8 @@
 
         <!-- Pill buttons -->
         <Style x:Key="Btn" TargetType="Button">
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Background" Value="#26282F" />
+            <Setter Property="Foreground" Value="#111111" />
+            <Setter Property="Background" Value="Transparent" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="FontSize" Value="12.5" />
             <Setter Property="Padding" Value="16,7" />
@@ -52,7 +52,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="B" Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="B" Background="{TemplateBinding Background}" BorderBrush="#111111" BorderThickness="1.6" CornerRadius="10" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -65,8 +65,8 @@
             </Setter>
         </Style>
         <Style x:Key="PrimaryBtn" TargetType="Button" BasedOn="{StaticResource Btn}">
-            <Setter Property="Background" Value="#30D158" />
-            <Setter Property="Foreground" Value="#06200F" />
+            <Setter Property="Background" Value="#111111" />
+            <Setter Property="Foreground" Value="White" />
         </Style>
 
         <!-- iOS-style switch -->
@@ -81,13 +81,13 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <ContentPresenter VerticalAlignment="Center" Margin="0,0,16,0" />
-                            <Border x:Name="Track" Grid.Column="1" Width="42" Height="24" CornerRadius="12" Background="#3A3C44">
+                            <Border x:Name="Track" Grid.Column="1" Width="42" Height="24" CornerRadius="12" Background="#B5B5B9">
                                 <Ellipse x:Name="Knob" Width="20" Height="20" Fill="White" HorizontalAlignment="Left" Margin="2,0" />
                             </Border>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Track" Property="Background" Value="#30D158" />
+                                <Setter TargetName="Track" Property="Background" Value="#111111" />
                                 <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right" />
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -98,7 +98,7 @@
 
         <!-- Sidebar items -->
         <Style x:Key="Nav" TargetType="RadioButton">
-            <Setter Property="Foreground" Value="#C9CCD3" />
+            <Setter Property="Foreground" Value="#2A2A2E" />
             <Setter Property="FontSize" Value="13.5" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="GroupName" Value="nav" />
@@ -112,10 +112,37 @@
                             </StackPanel>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="B" Property="Background" Value="#1A1C22" /></Trigger>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="B" Property="Background" Value="#C4C4C7" /></Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="B" Property="Background" Value="#23252D" />
+                                <Setter TargetName="B" Property="Background" Value="#111111" />
                                 <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Companion picker tile: preview mascot (in Tag) above its name -->
+        <Style x:Key="MascotTile" TargetType="RadioButton">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Foreground" Value="#111111" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="B" Margin="6" CornerRadius="14" BorderBrush="#111111" BorderThickness="1.6" Background="#D6D6D9" Padding="10,14,10,10">
+                            <StackPanel>
+                                <Border Width="74" Height="74" CornerRadius="16" Background="#C3C3C7" HorizontalAlignment="Center">
+                                    <Viewbox Margin="8"><ContentPresenter Content="{TemplateBinding Tag}" /></Viewbox>
+                                </Border>
+                                <TextBlock Text="{TemplateBinding Content}" FontFamily="{StaticResource Display}" FontSize="17" HorizontalAlignment="Center" Margin="0,8,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="B" Property="Background" Value="#CACACD" /></Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="B" Property="BorderThickness" Value="3" />
+                                <Setter TargetName="B" Property="Background" Value="#F0F0F1" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -137,16 +164,18 @@
         </Grid.ColumnDefinitions>
 
         <!-- ============ SIDEBAR ============ -->
-        <Border Background="#0A0B0E" BorderBrush="#1C1D23" BorderThickness="0,0,1,0">
+        <Border Background="#CDCDD0" BorderBrush="#111111" BorderThickness="0,0,1.6,0">
             <DockPanel Margin="14,20,14,16">
                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="6,0,0,22">
-                    <Viewbox Width="34" Height="34"><local:Mascot x:Name="LogoMascot" /></Viewbox>
+                    <Border Width="40" Height="40" CornerRadius="12" Background="#111111" Padding="3">
+                        <Viewbox><local:Mascot x:Name="LogoMascot" /></Viewbox>
+                    </Border>
                     <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="Dynamic Island" FontWeight="SemiBold" FontSize="14" />
+                        <TextBlock Text="Dynamic Island" FontFamily="{StaticResource Display}" FontSize="16" />
                         <TextBlock Text="for Windows" Foreground="{StaticResource Muted}" FontSize="11.5" />
                     </StackPanel>
                 </StackPanel>
-                <TextBlock DockPanel.Dock="Bottom" x:Name="VersionText" Foreground="#5D616B" FontSize="11" Margin="8,0" />
+                <TextBlock DockPanel.Dock="Bottom" x:Name="VersionText" Foreground="#6A6A70" FontSize="11" Margin="8,0" />
                 <StackPanel>
                     <RadioButton x:Name="NavHome" Style="{StaticResource Nav}" Tag="&#xE80F;" Content="Home" IsChecked="True" Checked="Nav_Checked" />
                     <RadioButton x:Name="NavClaude" Style="{StaticResource Nav}" Tag="&#xE943;" Content="Claude Code" Checked="Nav_Checked" />
@@ -156,6 +185,19 @@
                 </StackPanel>
             </DockPanel>
         </Border>
+
+        <!-- ============ DECOR: corner web + a spider hanging on its thread (from the template) ============ -->
+        <Canvas Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top" Width="200" Height="180" IsHitTestVisible="False">
+            <Path Stroke="#111111" StrokeThickness="2.2" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                  Data="M200,0 L26.7,24.4 M200,0 L42.7,76.7 M200,0 L74.1,121.6 M200,0 L117.8,154.5 M200,0 L169.6,172.3 M166.3,4.7 Q174,8 169.4,14.9 M169.4,14.9 Q177.7,15.6 175.5,23.6 M175.5,23.6 Q183.6,21.7 184,30 M184,30 Q191.1,25.7 194.1,33.5 M138.6,8.6 Q152.6,14.5 144.3,27.2 M144.3,27.2 Q159.4,28.4 155.4,43.1 M155.4,43.1 Q170.1,39.6 170.9,54.7 M170.9,54.7 Q183.9,46.9 189.2,61.1 M108.9,12.8 Q129.6,21.5 117.3,40.3 M117.3,40.3 Q139.7,42.2 133.8,63.9 M133.8,63.9 Q155.7,58.8 156.8,81.2 M156.8,81.2 Q176,69.6 184,90.6 M77.2,17.3 Q105.1,29 88.5,54.4 M88.5,54.4 Q118.7,56.9 110.8,86.1 M110.8,86.1 Q140.3,79.2 141.8,109.5 M141.8,109.5 Q167.7,93.8 178.5,122.1 M43.5,22 Q79.1,37 58,69.3 M58,69.3 Q96.5,72.5 86.3,109.8 M86.3,109.8 Q123.9,100.9 125.8,139.5 M125.8,139.5 Q158.8,119.5 172.6,155.6" />
+        </Canvas>
+        <Canvas Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top" Width="60" Height="100" Margin="0,0,230,0" Panel.ZIndex="1">
+            <Canvas x:Name="HangingSpider" Width="60" Height="100" Background="Transparent" Cursor="Hand">
+                <Canvas.RenderTransform><RotateTransform x:Name="SpiderSwing" CenterX="30" CenterY="0" /></Canvas.RenderTransform>
+                <Line X1="30" Y1="0" X2="30" Y2="36" Stroke="#111111" StrokeThickness="1" />
+                <Viewbox Canvas.Left="6" Canvas.Top="28" Width="48" Height="48"><local:Mascot x:Name="SpiderMascot" /></Viewbox>
+            </Canvas>
+        </Canvas>
 
         <!-- ============ PAGES ============ -->
         <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
@@ -197,7 +239,7 @@
                             <ItemsControl x:Name="PendingList">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Background="#1D1F26" CornerRadius="12" Padding="14" Margin="0,0,0,8">
+                                        <Border Background="#D2D2D5" CornerRadius="12" Padding="14" Margin="0,0,0,8">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*" />
@@ -208,7 +250,7 @@
                                                         <Run Text="{Binding Project, Mode=OneWay}" /> · <Run Text="{Binding TimeText, Mode=OneWay}" />
                                                     </TextBlock>
                                                     <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13.5" Margin="0,2,0,6" />
-                                                    <TextBlock Text="{Binding Detail}" FontFamily="{StaticResource Mono}" FontSize="12" Foreground="#D6D8DE" TextWrapping="Wrap" />
+                                                    <TextBlock Text="{Binding Detail}" FontFamily="{StaticResource Mono}" FontSize="12" Foreground="#2A2A2E" TextWrapping="Wrap" />
                                                 </StackPanel>
                                                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
                                                     <Button Style="{StaticResource Btn}" Content="{Binding DenyLabel}" Tag="{Binding}" Click="Deny_Click" Margin="0,0,8,0" />
@@ -236,7 +278,7 @@
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Text="{Binding TimeText}" Foreground="{StaticResource Muted}" FontSize="12" />
-                                            <TextBlock Grid.Column="1" Text="{Binding Project}" FontSize="12" Foreground="#C9CCD3" TextTrimming="CharacterEllipsis" Margin="0,0,10,0" />
+                                            <TextBlock Grid.Column="1" Text="{Binding Project}" FontSize="12" Foreground="#3A3A3E" TextTrimming="CharacterEllipsis" Margin="0,0,10,0" />
                                             <TextBlock Grid.Column="2" Text="{Binding Text}" FontSize="12.5" TextTrimming="CharacterEllipsis" />
                                         </Grid>
                                     </DataTemplate>
@@ -278,7 +320,7 @@
                                     <TextBlock Style="{StaticResource Note}" Text="Gives Claude tools to notify you, show progress and ask you quick questions in the island (claude mcp add)." />
                                 </StackPanel>
                             </CheckBox>
-                            <TextBlock x:Name="ConnectMessage" Style="{StaticResource Note}" Foreground="#FF9F0A" Margin="0,4,0,0" />
+                            <TextBlock x:Name="ConnectMessage" Style="{StaticResource Note}" Foreground="#B35400" Margin="0,4,0,0" />
                         </StackPanel>
                     </Border>
 
@@ -319,7 +361,7 @@
                             <TextBlock Style="{StaticResource Note}" Text="Press the shortcut anywhere. The screen freezes and your cursor becomes a pen: circle anything, then just say your question. Claude answers in the island and out loud." />
                             <CheckBox x:Name="CircleSwitch" Style="{StaticResource Switch}" Click="Setting_Click" Margin="0,6,0,0"><TextBlock Text="Ctrl + Shift + Space opens circle to ask" /></CheckBox>
                             <CheckBox x:Name="SpeakSwitch" Style="{StaticResource Switch}" Click="Setting_Click"><TextBlock Text="Read answers aloud" /></CheckBox>
-                            <TextBlock x:Name="HotkeyNote" Style="{StaticResource Note}" Foreground="#FF9F0A" />
+                            <TextBlock x:Name="HotkeyNote" Style="{StaticResource Note}" Foreground="#B35400" />
                             <TextBlock Style="{StaticResource Note}" Margin="0,4,0,0" Text="Voice questions use Windows speech recognition. If it says it's unavailable, turn on Settings → Privacy &amp; security → Speech → Online speech recognition." />
                             <Button Style="{StaticResource PrimaryBtn}" Content="Try circle to ask" HorizontalAlignment="Left" Margin="0,12,0,0" Click="TryCircle_Click" />
                         </StackPanel>
@@ -337,7 +379,7 @@
                             <TextBlock Style="{StaticResource H2}" Text="Optional: Anthropic API key" />
                             <TextBlock Style="{StaticResource Note}" Text="Only if you don't use Claude Code. Stored encrypted for your Windows account." />
                             <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                                <PasswordBox x:Name="KeyBox" Width="320" Padding="8,6" Background="#0F1014" Foreground="White" BorderBrush="#2A2C33" CaretBrush="White" />
+                                <PasswordBox x:Name="KeyBox" Width="320" Padding="8,6" Background="#F2F2F2" Foreground="#111111" BorderBrush="#111111" CaretBrush="#111111" />
                                 <Button Style="{StaticResource Btn}" Content="Save key" Margin="8,0,0,0" Click="SaveKey_Click" />
                                 <Button Style="{StaticResource Btn}" Content="Remove" Margin="8,0,0,0" Click="RemoveKey_Click" />
                             </StackPanel>
@@ -349,7 +391,34 @@
                 <!-- ISLAND SETTINGS -->
                 <StackPanel x:Name="PageIsland" Visibility="Collapsed">
                     <TextBlock Style="{StaticResource H1}" Text="Island settings" />
-                    <TextBlock Style="{StaticResource Note}" Margin="0,4,0,22" Text="Choose what the island shows." />
+                    <TextBlock Style="{StaticResource Note}" Margin="0,4,0,22" Text="Choose your companion, where the island sits and what it shows." />
+                    <Border Style="{StaticResource CardBorder}" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource H2}" Text="Companion" />
+                            <TextBlock Style="{StaticResource Note}" Text="Lives in the island, the home window and Jarvis. Poke it five times to make it dizzy." Margin="0,0,0,12" />
+                            <UniformGrid Columns="3" Margin="-6,0">
+                                <RadioButton x:Name="PickRobo" Style="{StaticResource MascotTile}" GroupName="mascot" Content="Robo" Checked="Mascot_Checked">
+                                    <RadioButton.Tag><local:Mascot x:Name="PreviewRobo" /></RadioButton.Tag>
+                                </RadioButton>
+                                <RadioButton x:Name="PickSpiderBot" Style="{StaticResource MascotTile}" GroupName="mascot" Content="Spider-Bot" Checked="Mascot_Checked">
+                                    <RadioButton.Tag><local:Mascot x:Name="PreviewSpiderBot" /></RadioButton.Tag>
+                                </RadioButton>
+                                <RadioButton x:Name="PickSpider" Style="{StaticResource MascotTile}" GroupName="mascot" Content="Spider" Checked="Mascot_Checked">
+                                    <RadioButton.Tag><local:Mascot x:Name="PreviewSpider" /></RadioButton.Tag>
+                                </RadioButton>
+                            </UniformGrid>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource CardBorder}" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource H2}" Text="Position" />
+                            <TextBlock Style="{StaticResource Note}" Text="Drag the island and drop it near any corner or edge: top or bottom, left, centre or right. It snaps into place and remembers it." />
+                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                <TextBlock x:Name="DockText" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,14,0" />
+                                <Button Style="{StaticResource Btn}" Content="Back to top centre" Click="ResetDock_Click" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
                     <Border Style="{StaticResource CardBorder}">
                         <StackPanel>
                             <CheckBox x:Name="StartupSwitch" Style="{StaticResource Switch}" Click="StartupSwitch_Click"><TextBlock Text="Start with Windows" /></CheckBox>

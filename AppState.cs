@@ -28,6 +28,11 @@ public sealed class AppSettings
     // Jarvis: "Hey Jarvis" wake word, Claude Code + MCP as the brain. Ctrl+Shift+J turns it all on/off.
     public bool JarvisEnabled { get; set; } = true;
 
+    // Look and place
+    public MascotKind Mascot { get; set; } = MascotKind.Robo;
+    /// <summary>Where the island docks: top/bottom + left/center/right. Drag the island to change it.</summary>
+    public IslandDock Dock { get; set; } = IslandDock.TopCenter;
+
     public bool FirstRunDone { get; set; }
 
     private static string PathOnDisk => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DynamicIsland", "settings.json");

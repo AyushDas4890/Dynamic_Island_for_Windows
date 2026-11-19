@@ -19,6 +19,11 @@ It stays out of your way as a thin sliver, then springs open for music, notifica
 
 ## Features
 
+### 🕸️ Spooky redesign, companions and drag-to-dock (new in 1.3)
+- **New home window look:** paper-grey and black ink, distressed [Rubik Dirt](https://fonts.google.com/specimen/Rubik+Dirt) headings (SIL Open Font License), a corner spider web and a little spider swinging on its thread (poke it)
+- **Pick your companion** in Island settings: **Robo**, **Spider-Bot** (red web-masked robot with big white lenses) or **Spider**. All keep their moods: blinking, focused, curious, happy, in love, dizzy
+- **Drag the island anywhere:** drop it near the top or bottom, left, centre or right and it snaps into place. At the bottom it sits on the taskbar and opens upwards. **Back to top centre** is in Island settings
+
 ### 🎙️ Jarvis: talk to your PC (new in 1.2)
 Say **"Hey Jarvis"** and ask anything out loud. Jarvis sees your screen, answers in a natural voice, and a little **cursor buddy flies over and highlights exactly where to click**, HeyClicky style.
 

@@ -30,7 +30,21 @@ public partial class HomeWindow : Window
             AppState.History.CollectionChanged -= OnListsChanged;
         };
 
-        SourceInitialized += (_, _) => DarkTitleBar();
+        // Companion previews and the template's hanging spider (gently swinging; poke it).
+        PreviewRobo.FixedKind = MascotKind.Robo;
+        PreviewSpiderBot.FixedKind = MascotKind.SpiderBot;
+        PreviewSpider.FixedKind = MascotKind.Spider;
+        SpiderMascot.FixedKind = MascotKind.Spider;
+        PreviewSpider.OnLight = SpiderMascot.OnLight = true; // black ink on the grey page
+        HangingSpider.MouseLeftButtonDown += (_, _) => SpiderMascot.Poke();
+        SpiderSwing.BeginAnimation(System.Windows.Media.RotateTransform.AngleProperty,
+            new System.Windows.Media.Animation.DoubleAnimation(-4, 4, TimeSpan.FromSeconds(2.6))
+            {
+                AutoReverse = true, RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever,
+                EasingFunction = new System.Windows.Media.Animation.SineEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseInOut },
+            });
+        AppSettings.Changed += UpdateDockText;
+        Closed += (_, _) => AppSettings.Changed -= UpdateDockText;
         Loaded += async (_, _) => { LoadSettings(); OnListsChanged(null, null); await RefreshStatus(); };
         Activated += async (_, _) => await RefreshStatus();
     }
@@ -74,7 +88,7 @@ public partial class HomeWindow : Window
         bool cli = AskClaude.ClaudeCodePath() != null;
         bool hooks = ClaudeHooks.IsInstalled();
         StatClaude.Text = !cli ? "Not installed" : hooks ? "Connected" : "Not connected";
-        StatClaude.Foreground = hooks ? (System.Windows.Media.Brush)FindResource("Green") : System.Windows.Media.Brushes.White;
+        StatClaude.Foreground = hooks ? (System.Windows.Media.Brush)FindResource("Green") : System.Windows.Media.Brushes.Black;
         StatClaudeNote.Text = !cli ? "Install Claude Code to follow it here." : hooks ? "Activity and approvals come to the island." : "Turn it on under Claude Code.";
         CliStatus.Text = cli
             ? "Claude Code is installed. Sign in once with your Claude account; the island then works with your subscription."
@@ -88,7 +102,7 @@ public partial class HomeWindow : Window
         bool mcp = cli && await ClaudeMcp.IsAdded();
         McpSwitch.IsChecked = mcp;
         StatMcp.Text = mcp ? "Added" : "Not added";
-        StatMcp.Foreground = mcp ? (System.Windows.Media.Brush)FindResource("Green") : System.Windows.Media.Brushes.White;
+        StatMcp.Foreground = mcp ? (System.Windows.Media.Brush)FindResource("Green") : System.Windows.Media.Brushes.Black;
         _loading = false;
 
         AskMode.Text = AskClaude.HasKey ? "Using your Anthropic API key" : cli ? "Using your Claude subscription via Claude Code" : "Not set up: install Claude Code or add an API key";
@@ -175,9 +189,27 @@ public partial class HomeWindow : Window
         SpeakSwitch.IsChecked = s.SpeakAnswers;
         HotkeyNote.Text = MainWindow.HotkeyRegistered ? "" : "Another app already uses Ctrl + Shift + Space, so the shortcut isn't active. Use the button below.";
         StartupSwitch.IsChecked = App.IsStartupEnabled();
+        (s.Mascot switch { MascotKind.SpiderBot => PickSpiderBot, MascotKind.Spider => PickSpider, _ => PickRobo }).IsChecked = true;
+        UpdateDockText();
         UpdateTimeoutText();
         _loading = false;
     }
+
+    private void Mascot_Checked(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        AppSettings.Current.Mascot = sender == PickSpiderBot ? MascotKind.SpiderBot : sender == PickSpider ? MascotKind.Spider : MascotKind.Robo;
+        AppSettings.Current.Save(); // every mascot redraws itself
+    }
+
+    private void UpdateDockText() => DockText.Text = "Now: " + AppSettings.Current.Dock switch
+    {
+        IslandDock.TopLeft => "top left", IslandDock.TopRight => "top right",
+        IslandDock.BottomLeft => "bottom left", IslandDock.BottomCenter => "bottom centre", IslandDock.BottomRight => "bottom right",
+        _ => "top centre",
+    };
+
+    private void ResetDock_Click(object sender, RoutedEventArgs e) => _island.ResetDock();
 
     private void Setting_Click(object sender, RoutedEventArgs e)
     {
@@ -215,9 +247,9 @@ public partial class HomeWindow : Window
 
     [DllImport("dwmapi.dll")] private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
 
-    private void DarkTitleBar()
+    private void LightTitleBar()
     {
-        int on = 1;
+        int on = 0; // light title bar to match the paper-grey theme
         DwmSetWindowAttribute(new WindowInteropHelper(this).Handle, 20 /* DWMWA_USE_IMMERSIVE_DARK_MODE */, ref on, sizeof(int));
     }
 }
